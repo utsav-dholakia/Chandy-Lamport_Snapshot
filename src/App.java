@@ -26,7 +26,6 @@ public class App {
             hostName = InetAddress.getLocalHost().getHostName();
             //System.out.println("HOST"+hostName);
         } catch (IOException e1) {
-            // TODO Auto-generated catch block
             System.out.println("Error fetching host name!");
         }
         try {
