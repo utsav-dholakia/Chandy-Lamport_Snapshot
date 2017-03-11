@@ -1,9 +1,9 @@
-#Total nodes	minPerActive	maxPerActive	minSendDelay	snapShotDelay
+#Total nodes	minPerActive	maxPerActive	minSendDelay	snapShotDelay	max#Messages
 5 6 10 100 2000 15
 
 0	dc02	1234 # nodeID hostName listenPort
 1	dc03	1233
-2	dc04	1233
+2	7N82VZ1	1233
 3	dc05	1232
 4	dc06	1233
 
