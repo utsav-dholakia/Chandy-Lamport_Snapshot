@@ -3,11 +3,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -36,22 +32,13 @@ public class App {
     public static Integer maxNumberMsgs = 0;
 
     public static Vector<Integer> vectorClock = new Vector<Integer>();
+    //Store channelStates for different snapshots : for snapshot no. 0, store clock value of each node in the map(<Node ID, Vector Clock value>)
+    public static List<TreeMap<Integer, Integer>> channelStates = new ArrayList<TreeMap<Integer, Integer>>();
+
     public static boolean isProcessActive = false;		//tells the current process state - active/passive
     public static boolean mapProtocolTerminationFlag = false;	//keeps track of Map protocol termination condition
     public static int sentMsgCount = 0;		//keeps track of all the sent messages over all active intervals
-    
-    public int computeMessagesSent(int minPerActive, int maxPerActive){
-    	int difference = maxPerActive - minPerActive;
-    	int messageCount=0;
-    	Random rnd = new Random(difference);	//generates a number between 0 and difference
-    	int offset = rnd.nextInt();
-    	messageCount = offset + minPerActive;	//minPeractive messages + offset gives me the new pseudo-random number of messages to be sent
-    	if(sentMsgCount+messageCount > 15){		// if I cant send the msgCount # of messages, I will send howmuch ever I can
-    		return 15-sentMsgCount;
-    	}
-    	
-    	return messageCount;		//otherwise send the msgCount # of messages
-    }
+
 
     public static void main(String args[]) {
         String line = null;
@@ -128,7 +115,7 @@ public class App {
                             String[] neighbors = line.split("\\s+");
                             System.out.println("<><><><><><><><>"+line);
                         	//tempTopology.put(Integer.parseInt(neighbors[0]), line);
-                            
+
                             //Assuming node 0 to be initially active, setting state to active.
                             if(self.getNodeId() == 0){
                             	isProcessActive = true;
@@ -160,7 +147,7 @@ public class App {
             serverThread.start();
 
             Thread.sleep(5000);
-            
+
             MapProtocol protocol = new MapProtocol();
             Thread protocolThread = new Thread(protocol);
             protocolThread.start();

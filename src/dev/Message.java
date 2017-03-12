@@ -10,6 +10,7 @@ import java.util.Vector;
 enum MessageType {
     App,
     Marker,
+    MapTermination,
     Snapshot;
 }
 
@@ -70,6 +71,15 @@ class Marker_Message extends Message{
 
     public void setSnapshot_ID(Integer snapshot_ID) {
         this.snapshot_ID = snapshot_ID;
+    }
+}
+
+class MapTermination_Message extends Message{
+    boolean mapTermination;
+
+    public MapTermination_Message(MessageType messageType, Integer srcNodeID, boolean mapTermination) {
+        super(messageType, srcNodeID);
+        this.mapTermination = mapTermination;
     }
 }
 
