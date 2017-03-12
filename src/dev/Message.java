@@ -17,10 +17,17 @@ enum MessageType {
 public class Message {
     MessageType messageType;
     Integer srcNodeID;
+    Vector<Integer> timeStamp;
+    Integer snapshotID;
+    boolean mapTermination;
 
-    public Message(MessageType messageType, Integer srcNodeID) {
+    public Message(MessageType messageType, Integer srcNodeID, Vector<Integer> timeStamp, Integer snapshotID,
+                   boolean mapTermination) {
         this.messageType = messageType;
         this.srcNodeID = srcNodeID;
+        this.timeStamp = timeStamp;
+        this.snapshotID = snapshotID;
+        this.mapTermination = mapTermination;
     }
 
     public MessageType getMessageType() {
@@ -38,15 +45,6 @@ public class Message {
     public void setSrcNodeID(Integer srcNodeID) {
         this.srcNodeID = srcNodeID;
     }
-}
-
-class App_Message extends Message{
-    Vector<Integer> timeStamp;
-
-    public App_Message(MessageType messageType, Integer srcNodeID, Vector<Integer> timeStamp) {
-        super(messageType, srcNodeID);
-        this.timeStamp = timeStamp;
-    }
 
     public Vector<Integer> getTimeStamp() {
         return timeStamp;
@@ -55,34 +53,27 @@ class App_Message extends Message{
     public void setTimeStamp(Vector<Integer> timeStamp) {
         this.timeStamp = timeStamp;
     }
-}
 
-class Marker_Message extends Message{
-    Integer snapshot_ID;
-
-    public Marker_Message(MessageType messageType, Integer srcNodeID, Integer snapshot_ID) {
-        super(messageType, srcNodeID);
-        this.snapshot_ID = snapshot_ID;
+    public Integer getSnapshotID() {
+        return snapshotID;
     }
 
-    public Integer getSnapshot_ID() {
-        return snapshot_ID;
+    public void setSnapshotID(Integer snapshotID) {
+        this.snapshotID = snapshotID;
     }
 
-    public void setSnapshot_ID(Integer snapshot_ID) {
-        this.snapshot_ID = snapshot_ID;
+    public boolean isMapTermination() {
+        return mapTermination;
     }
-}
 
-class MapTermination_Message extends Message{
-    boolean mapTermination;
-
-    public MapTermination_Message(MessageType messageType, Integer srcNodeID, boolean mapTermination) {
-        super(messageType, srcNodeID);
+    public void setMapTermination(boolean mapTermination) {
         this.mapTermination = mapTermination;
     }
+
+
 }
 
+/*
 class Snapshot_Message extends Message{
     boolean nodeActive;
     TreeMap<Integer, Integer> channelStates;
@@ -109,3 +100,4 @@ class Snapshot_Message extends Message{
         this.channelStates = channelStates;
     }
 }
+*/

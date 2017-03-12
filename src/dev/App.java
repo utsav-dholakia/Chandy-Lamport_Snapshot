@@ -8,6 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import dev.Node;
 
 /**
@@ -30,7 +31,8 @@ public class App {
     public static Integer minSendDelay = 0;
     public static Integer maxSendDelay = 0;
     public static Integer maxNumberMsgs = 0;
-
+    //Store marker message is sent or not for a relevant snapshot ID
+    public static TreeMap<Integer, Boolean> markerMessageSent = new TreeMap<Integer, Boolean>();
     public static Vector<Integer> vectorClock = new Vector<Integer>();
     //Store channelStates for different snapshots : for snapshot no. 0, store clock value of each node in the map(<Node ID, Vector Clock value>)
     public static List<TreeMap<Integer, Integer>> channelStates = new ArrayList<TreeMap<Integer, Integer>>();
@@ -151,6 +153,11 @@ public class App {
             MapProtocol protocol = new MapProtocol();
             Thread protocolThread = new Thread(protocol);
             protocolThread.start();
+
+            //If the node is co-ordinator node (node 0), then start sending marker messages to neighbors
+            if(self.getNodeId() == 0){
+
+            }
 
             //Wait for server class be finished before finishing main thread
             serverThread.join();
