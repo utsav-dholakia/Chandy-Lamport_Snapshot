@@ -1,12 +1,14 @@
 package dev;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import dev.Node;
 
@@ -126,10 +128,52 @@ public class App {
                 }
             }
 
-
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+}
+
+
+class Server implements Runnable{
+    Integer currPortNum;
+    boolean serverOn = true;
+    public static volatile BlockingQueue<Message> messagesToBeProcessed = new LinkedBlockingQueue<Message>();
+
+    Server(Integer portNum){
+        this.currPortNum = portNum;
+    }
+
+    @Override
+    public void run() {
+        ServerSocket serverSocket;
+        try{
+            //Initialize the receiver as a continuous listening server
+            serverSocket = new ServerSocket();
+            System.out.println("Listening on port : " + currPortNum);
+            while (serverOn) {
+                //If global termination is marked, break the loop and shut down the server
+                Socket sock = serverSocket.accept();
+                System.out.println("Connected");
+                messagesToBeProcessed.add((Message) new ObjectInputStream(sock.getInputStream()).readObject());
+            }
+        } catch(Exception e){
+            System.out.println("Could not create server on port number : " + currPortNum );
+            e.printStackTrace();
+        }
+    }
+}
+
+class Processor implements Runnable{
+    Socket socket;
+
+    Processor(Socket socket){
+        this.socket = socket;
+    }
+
+    @Override
+    public void run(){
+
     }
 }
 
