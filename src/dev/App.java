@@ -131,6 +131,16 @@ public class App {
                 }
             }
 
+
+            //Listener(Server) class initiated
+            Listener listener = new Listener(self.getPort());
+            Thread serverThread = new Thread(listener);
+            serverThread.start();
+
+            Thread.sleep(5000);
+
+            //Wait for server class be finished before finishing main thread
+            serverThread.join();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -138,64 +148,4 @@ public class App {
 }
 
 
-class Server extends Thread{
-    Integer currPortNum;
-    boolean serverOn = true;
-    public static BlockingQueue<Message> messagesToBeProcessed = new LinkedBlockingQueue<Message>();
-
-    Server(Integer portNum){
-        this.currPortNum = portNum;
-    }
-
-    @Override
-    public void run() {
-        ServerSocket serverSocket;
-        try{
-            //Initialize the receiver as a continuous listening server
-            serverSocket = new ServerSocket();
-            System.out.println("Listening on port : " + currPortNum);
-            while (serverOn) {
-                Socket sock = serverSocket.accept();
-                System.out.println("Connected");
-                //Enter a message that is received into the queue to be processed
-                messagesToBeProcessed.put((Message) new ObjectInputStream(sock.getInputStream()).readObject());
-                //Initiate thread of a class to process the messages one by one from queue
-                Processor processor = new Processor();
-                //Create a new thread only if no thread exists
-                if(!processor.isAlive()){
-                    new Thread(processor).start();
-                }
-            }
-        } catch(Exception e){
-            System.out.println("Could not create server on port number : " + currPortNum );
-            e.printStackTrace();
-        }
-    }
-}
-
-class Processor extends Thread{
-
-    @Override
-    public void run(){
-        try {
-
-            Message inMessage = Server.messagesToBeProcessed.take();
-
-            switch(inMessage.getMessageType()){
-                case App:
-                    break;
-
-                case Marker:
-
-                    break;
-
-                case Snapshot:
-                    break;
-            }
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-}
 
