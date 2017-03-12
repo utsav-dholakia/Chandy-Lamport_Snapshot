@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -32,6 +33,8 @@ public class App {
     public static Integer minSendDelay = 0;
     public static Integer maxSendDelay = 0;
     public static Integer maxNumberMsgs = 0;
+
+    public static Vector<Integer> vectorClock = new Vector<Integer>();
 
     public static void main(String args[]) {
         String line = null;
@@ -135,10 +138,10 @@ public class App {
 }
 
 
-class Server implements Runnable{
+class Server extends Thread{
     Integer currPortNum;
     boolean serverOn = true;
-    public static volatile BlockingQueue<Message> messagesToBeProcessed = new LinkedBlockingQueue<Message>();
+    public static BlockingQueue<Message> messagesToBeProcessed = new LinkedBlockingQueue<Message>();
 
     Server(Integer portNum){
         this.currPortNum = portNum;
@@ -152,10 +155,16 @@ class Server implements Runnable{
             serverSocket = new ServerSocket();
             System.out.println("Listening on port : " + currPortNum);
             while (serverOn) {
-                //If global termination is marked, break the loop and shut down the server
                 Socket sock = serverSocket.accept();
                 System.out.println("Connected");
-                messagesToBeProcessed.add((Message) new ObjectInputStream(sock.getInputStream()).readObject());
+                //Enter a message that is received into the queue to be processed
+                messagesToBeProcessed.put((Message) new ObjectInputStream(sock.getInputStream()).readObject());
+                //Initiate thread of a class to process the messages one by one from queue
+                Processor processor = new Processor();
+                //Create a new thread only if no thread exists
+                if(!processor.isAlive()){
+                    new Thread(processor).start();
+                }
             }
         } catch(Exception e){
             System.out.println("Could not create server on port number : " + currPortNum );
@@ -164,16 +173,29 @@ class Server implements Runnable{
     }
 }
 
-class Processor implements Runnable{
-    Socket socket;
-
-    Processor(Socket socket){
-        this.socket = socket;
-    }
+class Processor extends Thread{
 
     @Override
     public void run(){
+        try {
 
+            Message inMessage = Server.messagesToBeProcessed.take();
+
+            switch(inMessage.getMessageType()){
+                case App:
+                    break;
+
+                case Marker:
+
+                    break;
+
+                case Snapshot:
+                    break;
+            }
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
 
