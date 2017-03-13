@@ -13,12 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by utsavdholakia on 3/11/17.
  */
 public class App {
-    public static String configFileName = "./configuration.txt";
-    public static volatile ConcurrentHashMap<Integer, ArrayList<String>> neighbours =
-            new ConcurrentHashMap<Integer, ArrayList<String>>();
-    public static Integer nodeID;       //Current Node's nodeID
-    public static String currHostName;  //Current Node's hostname
-    public static Integer currPortNum;  //Current Node's port number
     public static Integer totalNodes;   //Total nodes in topology
     public static Node self;
     public static Map<Integer, Node> tempMap= new HashMap<Integer, Node>();
@@ -30,18 +24,19 @@ public class App {
     public static Integer snapshotDelay = 0;
     public static Integer maxNumberMsgs = 0;
     //Store marker message is sent or not for a relevant snapshot ID
-    public static TreeMap<Integer, Boolean> markerMessageSent = new TreeMap<Integer, Boolean>();
-    //Store which node has sent it is passive now message to node 0
-    public static TreeMap<Integer, Boolean> nodesPassive = new TreeMap<Integer, Boolean>();
+    public static volatile TreeMap<Integer, Boolean> markerMessageSent = new TreeMap<Integer, Boolean>();
+    //Store which node has sent "it is passive now" message to node 0
+    public static volatile Set<Integer> nodesPassive = new HashSet<Integer>();
     //Local vector clock of the node
-    public static Vector<Integer> vectorClock = new Vector<Integer>();
+    public static volatile Vector<Integer> vectorClock = new Vector<Integer>();
     //Store channelStates for different snapshots : for snapshot no. 0, store clock value of each node in the map(<Node ID, Vector Clock value>)
-    public static List<TreeMap<Integer, Integer>> channelStates = new ArrayList<TreeMap<Integer, Integer>>();
-
-    public static boolean isProcessActive = false;		//tells the current process state - active/passive
-    public static boolean mapProtocolTerminationFlag = false;	//keeps track of Map protocol termination condition
-    public static int sentMsgCount = 0;		//keeps track of all the sent messages over all active intervals
-
+    public static volatile List<TreeMap<Integer, Integer>> channelStates = new ArrayList<TreeMap<Integer, Integer>>();
+    public static volatile boolean isProcessActive = false;		//tells the current process state - active/passive
+    public static volatile boolean mapProtocolTerminationFlag = false;	//keeps track of Map protocol termination condition
+    public static volatile int sentMsgCount = 0;		//keeps track of all the sent messages over all active intervals
+    public static volatile boolean stopMapProtocolsMessageSent = false;  //Used by node 0 to indicate it has sent stop map protocol message to everyone
+    public static volatile Integer maxSnapshotID = 0;    //Used to check what is the max number of snapshot initiated by node 0, stop server after that
+    public static volatile Integer snapshotNumber = 0;   //Used by node 0 to assign snapshotID to each snapshot
 
     public static void main(String args[]) {
         String line = null;
@@ -146,33 +141,71 @@ public class App {
 
             //Listener(Server) class initiated
             Listener listener = new Listener(self.getPort());
-            Thread serverThread = new Thread(listener);
-            serverThread.start();
+            Thread listenerThread = new Thread(listener, "Listener Thread");
+            listenerThread.start();
 
             Thread.sleep(5000);
 
             MapProtocol protocol = new MapProtocol();
-            Thread protocolThread = new Thread(protocol);
+            Thread protocolThread = new Thread(protocol, "Map Protocol Thread");
             protocolThread.start();
 
-            //If the node is co-ordinator node (node 0), then start sending marker messages to neighbors
+            //If the node is co-ordinator node (node 0), then start sending snapshot initiating marker messages to neighbors
             if(self.getNodeId() == 0){
-                final AtomicInteger snapshotID = new AtomicInteger(0);
-                Timer timer = new Timer();
-                TimerTask tasknew = new TimerTask() {
-                    @Override
-                    public void run() {
-                        Message outMessage = new Message(MessageType.Marker, 0, null,
-                                snapshotID.getAndIncrement(), false, false);
-                        Processor.sendMarkerMessages(outMessage);
+                //Stop initiating snapshots after you sent map protocol termination messages to everyone
+                while(!App.stopMapProtocolsMessageSent){
+                    Message outMessage = new Message(MessageType.Marker, 0, null, snapshotNumber);
+                    Processor.sendMarkerMessages(outMessage);
+                    snapshotNumber++;
+                    Thread.sleep(snapshotDelay);
+                }
+            }
+            //Wait for map protocol termination to be marked
+            while(true){
+                //When it is marked, wait for marker messages with maxSnapshotID to arrive from all neighbors, then terminate server
+                if(mapProtocolTerminationFlag){
+                    Set<Integer> neighborsWithMarkerMessage = channelStates.get(maxSnapshotID).keySet();
+                    while(true){
+                        Iterator<Integer> neighborNodes = nodeMap.keySet().iterator();
+                        boolean neighbourMarkerNotArrivedYet = false;
+                        while(neighborNodes.hasNext()){
+                            if(!neighborsWithMarkerMessage.contains(neighborNodes.next())) {
+                                neighbourMarkerNotArrivedYet = true;
+                                break;
+                            }
+                        }
+                        if(!neighbourMarkerNotArrivedYet){
+                            break;
+                        }
                     }
-                };
-                timer.schedule(tasknew, snapshotDelay);
+                    //When message from all neighbour arrived with maxSnapshotID, stop Listener
+                    listener.stopListener();
+                    break;
+                }
             }
 
-            //Wait for server class be finished before finishing main thread
-            serverThread.join();
+            printOutput();
+
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void printOutput(){
+        try {
+            FileWriter fileWriter = new FileWriter("configuration-" + self.getNodeId() + ".out");
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            int index = 0;
+            while(index < App.maxSnapshotID){
+                int node = 0;
+                while(node < App.totalNodes) {
+                    int value = App.channelStates.get(index).get(node);
+                    fileWriter.write(value + "  ");
+                }
+                fileWriter.write("\n");
+            }
+
+        } catch(IOException e){
             e.printStackTrace();
         }
     }

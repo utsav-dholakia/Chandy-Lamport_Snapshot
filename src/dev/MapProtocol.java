@@ -28,7 +28,7 @@ public class MapProtocol extends Thread{
 		while(App.mapProtocolTerminationFlag == false){
 			if(App.sentMsgCount >= App.maxNumberMsgs){
 				App.isProcessActive = false;
-				Message alertToCoordinator = new Message(MessageType.NodePassive,App.self.getNodeId(),null,null,false,true);	//control msg to 0 saying I am permanently passive
+				Message alertToCoordinator = new Message(MessageType.NodePassive,App.self.getNodeId(),null,null);	//control msg to 0 saying I am permanently passive
 				try{
 					Socket socket = new Socket(App.tempMap.get(0).getNodeAddr(),App.tempMap.get(0).getPort());
 					ObjectOutputStream outMessage = new ObjectOutputStream(socket.getOutputStream());
@@ -46,7 +46,7 @@ public class MapProtocol extends Thread{
 				
 				for(int i=0; i<messageCount; i++){
 					//MessageType messageType, Integer srcNodeID, Vector<Integer> timeStamp, Integer snapshotID,boolean mapTermination,boolean nodePassive
-						Message m = new Message(MessageType.App, App.self.getNodeId(), App.vectorClock, null, false,false);
+						Message m = new Message(MessageType.App, App.self.getNodeId(), App.vectorClock, null);
 						Random rnd = new Random();	
 						int choice = rnd.nextInt(size);	// generate a random int between 0 and size-1
 						

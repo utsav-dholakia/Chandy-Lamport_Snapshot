@@ -45,24 +45,21 @@ public class Processor extends Thread{
 
                 case MapTermination:
                     App.mapProtocolTerminationFlag = true;
+                    App.maxSnapshotID = inMessage.getSnapshotID();
                     break;
 
                 case NodePassive:
                     if(App.self.getNodeId() == 0){
                         //Set node is passive flag true for the node which has sent the nodepassive message
-                        App.nodesPassive.put(inMessage.getSrcNodeID(), true);
-
+                        App.nodesPassive.add(inMessage.getSrcNodeID());
                         //Find if all the nodes are passive or not
-                        boolean allNodesPassive = App.nodesPassive.containsValue(false);
-                        if(allNodesPassive){
-                            Message message = new Message(MessageType.MapTermination, 0, null,
-                                    null, true, false);
+                        if(App.nodesPassive.size() == App.tempMap.keySet().size()){
+                            App.stopMapProtocolsMessageSent = true;
+                            //Indiate each node has to terminate their map protocol, and they have to mark max snapshot value
+                            Message message = new Message(MessageType.MapTermination, 0, null, App.snapshotNumber);
                             sendMapTerminationMessages(message);
                         }
                     }
-                    break;
-
-                case Snapshot:
                     break;
             }
         } catch (Exception e) {

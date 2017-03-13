@@ -11,8 +11,7 @@ enum MessageType {
     App,
     Marker,
     MapTermination,
-    NodePassive,
-    Snapshot;
+    NodePassive;
 }
 
 public class Message {
@@ -22,19 +21,12 @@ public class Message {
     Vector<Integer> timeStamp;
     //Only for Marker messages
     Integer snapshotID;
-    //Only for special Map protocol termination message from co-ordinator
-    boolean mapTermination;
-    //Only for node passive message this flag will be true and it's value will be used
-    boolean nodePassive;
 
-    public Message(MessageType messageType, Integer srcNodeID, Vector<Integer> timeStamp, Integer snapshotID,
-                   boolean mapTermination, boolean nodePassive) {
+    public Message(MessageType messageType, Integer srcNodeID, Vector<Integer> timeStamp, Integer snapshotID) {
         this.messageType = messageType;
         this.srcNodeID = srcNodeID;
         this.timeStamp = timeStamp;
         this.snapshotID = snapshotID;
-        this.mapTermination = mapTermination;
-        this.nodePassive = nodePassive;
     }
 
     public MessageType getMessageType() {
@@ -69,42 +61,4 @@ public class Message {
         this.snapshotID = snapshotID;
     }
 
-    public boolean isMapTermination() {
-        return mapTermination;
-    }
-
-    public void setMapTermination(boolean mapTermination) { this.mapTermination = mapTermination; }
-
-    public boolean getNodePassive() {return nodePassive;}
-
-    public void setNodePassive(boolean nodePassive) { this.nodePassive = nodePassive; }
 }
-
-/*
-class Snapshot_Message extends Message{
-    boolean nodeActive;
-    TreeMap<Integer, Integer> channelStates;
-
-    public Snapshot_Message(MessageType messageType, Integer srcNodeID, boolean nodeActive, TreeMap<Integer, Integer> channelStates) {
-        super(messageType, srcNodeID);
-        this.nodeActive = nodeActive;
-        this.channelStates = channelStates;
-    }
-
-    public boolean isNodeActive() {
-        return nodeActive;
-    }
-
-    public void setNodeActive(boolean nodeActive) {
-        this.nodeActive = nodeActive;
-    }
-
-    public TreeMap<Integer, Integer> getChannelStates() {
-        return channelStates;
-    }
-
-    public void setChannelStates(TreeMap<Integer, Integer> channelStates) {
-        this.channelStates = channelStates;
-    }
-}
-*/

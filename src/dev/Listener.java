@@ -11,7 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Listener extends Thread{
     Integer currPortNum;
-    boolean serverOn = true;
+    volatile boolean serverOn = true;
     public static BlockingQueue<Message> messagesToBeProcessed = new LinkedBlockingQueue<Message>();
 
     Listener(Integer portNum){
@@ -41,5 +41,9 @@ public class Listener extends Thread{
             System.out.println("Could not create server on port number : " + currPortNum );
             e.printStackTrace();
         }
+    }
+
+    public void stopListener(){
+        serverOn = false;
     }
 }
