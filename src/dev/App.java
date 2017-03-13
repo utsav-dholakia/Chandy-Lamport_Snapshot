@@ -22,7 +22,7 @@ public class App {
     public static Integer totalNodes;   //Total nodes in topology
     public static Node self;
     public static Map<Integer, Node> tempMap= new HashMap<Integer, Node>();
-    public static Map<Integer, Node> nodeMap= new HashMap<Integer, Node>();
+    public static Map<Integer, Node> nodeMap= new HashMap<Integer, Node>();		//Stores my neighbors
     
     public static Integer minPerActive = 0;
     public static Integer maxPerActive = 0;
@@ -127,7 +127,7 @@ public class App {
                             if (self.getNodeId() == counter) {    //if 1st identifier is me ,then get my neighbors and add to nodeMap
                             	for (int i = 0; i < neighbors.length; i++) {
                                     nodeMap.put(Integer.parseInt(neighbors[i]), tempMap.get(Integer.parseInt(neighbors[i])));
-                                   // discoveredTopology.put(Integer.parseInt(neighbors[i]), new TopologyPayload(1, false));    // already discovered nodes are my neighbors @ 1 hop dist
+                                   //discoveredTopology.put(Integer.parseInt(neighbors[i]), new TopologyPayload(1, false));    //already discovered nodes are my neighbors @ 1 hop dist
                                     System.out.println(">>>>"+neighbors[i]+">>>"+tempMap.get(Integer.parseInt(neighbors[i])));
                                 }
                             }
