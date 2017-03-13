@@ -20,7 +20,14 @@ public class MapProtocol extends Thread{
 	public void run() {
 		// TODO Auto-generated method stub
 		while(App.mapProtocolTerminationFlag == false){
-			
+			if(App.isProcessActive == true){
+				int messageCount = computeMessagesSent(App.minPerActive, App.maxPerActive);	//get a random message count
+				for(int i=0; i<messageCount; i++){
+						Message m = new Message(MessageType.App, App.self.getNodeId(), App.vectorClock, null, false);
+						
+				}
+				
+			}			
 		}
 		
 	}
