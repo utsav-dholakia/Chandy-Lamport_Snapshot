@@ -9,9 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import dev.Node;
-
 /**
  * Created by utsavdholakia on 3/11/17.
  */
@@ -34,6 +31,9 @@ public class App {
     public static Integer maxNumberMsgs = 0;
     //Store marker message is sent or not for a relevant snapshot ID
     public static TreeMap<Integer, Boolean> markerMessageSent = new TreeMap<Integer, Boolean>();
+    //Store which node has sent it is passive now message to node 0
+    public static TreeMap<Integer, Boolean> nodesPassive = new TreeMap<Integer, Boolean>();
+    //Local vector clock of the node
     public static Vector<Integer> vectorClock = new Vector<Integer>();
     //Store channelStates for different snapshots : for snapshot no. 0, store clock value of each node in the map(<Node ID, Vector Clock value>)
     public static List<TreeMap<Integer, Integer>> channelStates = new ArrayList<TreeMap<Integer, Integer>>();
@@ -105,7 +105,7 @@ public class App {
                                 Node node = new Node();
                                 node.setNodeId(Integer.parseInt(sysInfo[0]));
                                 node.setNodeAddr(sysInfo[1]);		//for local system
-                               // node.setNodeAddr(sysInfo[1]+".utdallas.edu");
+                                // node.setNodeAddr(sysInfo[1]+".utdallas.edu");
                                 node.setPort(Integer.parseInt(sysInfo[2]));
                                 if (node.getNodeAddr().equals(hostName)) {      //identifying if the node is itself, then storing it in SELF.
                                     self = node;
@@ -162,7 +162,8 @@ public class App {
                 TimerTask tasknew = new TimerTask() {
                     @Override
                     public void run() {
-                        Message outMessage = new Message(MessageType.Marker, 0, null, snapshotID.getAndIncrement(), false);
+                        Message outMessage = new Message(MessageType.Marker, 0, null,
+                                snapshotID.getAndIncrement(), false, false);
                         Processor.sendMarkerMessages(outMessage);
                     }
                 };

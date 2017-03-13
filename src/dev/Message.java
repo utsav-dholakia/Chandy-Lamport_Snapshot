@@ -11,6 +11,7 @@ enum MessageType {
     App,
     Marker,
     MapTermination,
+    NodePassive,
     Snapshot;
 }
 
@@ -23,14 +24,17 @@ public class Message {
     Integer snapshotID;
     //Only for special Map protocol termination message from co-ordinator
     boolean mapTermination;
+    //Only for node passive message this flag will be true and it's value will be used
+    boolean nodePassive;
 
     public Message(MessageType messageType, Integer srcNodeID, Vector<Integer> timeStamp, Integer snapshotID,
-                   boolean mapTermination) {
+                   boolean mapTermination, boolean nodePassive) {
         this.messageType = messageType;
         this.srcNodeID = srcNodeID;
         this.timeStamp = timeStamp;
         this.snapshotID = snapshotID;
         this.mapTermination = mapTermination;
+        this.nodePassive = nodePassive;
     }
 
     public MessageType getMessageType() {
@@ -69,11 +73,11 @@ public class Message {
         return mapTermination;
     }
 
-    public void setMapTermination(boolean mapTermination) {
-        this.mapTermination = mapTermination;
-    }
+    public void setMapTermination(boolean mapTermination) { this.mapTermination = mapTermination; }
 
+    public boolean getNodePassive() {return nodePassive;}
 
+    public void setNodePassive(boolean nodePassive) { this.nodePassive = nodePassive; }
 }
 
 /*

@@ -41,6 +41,22 @@ public class Processor extends Thread{
                     break;
 
                 case MapTermination:
+                    App.mapProtocolTerminationFlag = true;
+                    break;
+
+                case NodePassive:
+                    if(App.self.getNodeId() == 0){
+                        //Set node is passive flag true for the node which has sent the nodepassive message
+                        App.nodesPassive.put(inMessage.getSrcNodeID(), true);
+
+                        //Find if all the nodes are passive or not
+                        boolean allNodesPassive = App.nodesPassive.containsValue(false);
+                        if(allNodesPassive){
+                            Message message = new Message(MessageType.MapTermination, 0, null,
+                                    null, true, false);
+                            sendMapTerminationMessages(message);
+                        }
+                    }
                     break;
 
                 case Snapshot:
@@ -67,6 +83,22 @@ public class Processor extends Thread{
                 } catch (Exception e) {
                     System.out.println(e);
                 }
+            }
+        }
+    }
+
+    public static void sendMapTerminationMessages(Message inMessage){
+        Socket clientSocket;
+        Iterator<Integer> it = App.tempMap.keySet().iterator();
+        while (it.hasNext()) {
+            try {
+                Node neighbor = App.tempMap.get(it.next());
+                clientSocket = new Socket(neighbor.getNodeAddr(), neighbor.getPort());
+                ObjectOutputStream outMessage = new ObjectOutputStream(clientSocket.getOutputStream());
+                outMessage.writeObject(inMessage);
+                clientSocket.close();
+            } catch (Exception e) {
+                System.out.println(e);
             }
         }
     }
