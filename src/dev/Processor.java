@@ -37,23 +37,7 @@ public class Processor extends Thread{
                     App.channelStates.set(inMessage.getSnapshotID(), channelState);
 
                     //If marker message is not sent to neighbors for this snapshot ID
-                    if(!App.markerMessageSent.get(inMessage.getSnapshotID())) {
-                        Socket clientSocket;
-                        Iterator<Integer> it = App.nodeMap.keySet().iterator();
-                        //Change source node ID to my source node ID
-                        inMessage.setSrcNodeID(App.self.getNodeId());
-                        while (it.hasNext()) {
-                            try {
-                                Node neighbor = App.nodeMap.get(it.next());
-                                clientSocket = new Socket(neighbor.getNodeAddr(), neighbor.getPort());
-                                ObjectOutputStream outMessage = new ObjectOutputStream(clientSocket.getOutputStream());
-                                outMessage.writeObject(inMessage);
-                                clientSocket.close();
-                            } catch (Exception e) {
-                                System.out.println(e);
-                            }
-                        }
-                    }
+                    sendMarkerMessages(inMessage);
                     break;
 
                 case MapTermination:
@@ -64,6 +48,26 @@ public class Processor extends Thread{
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void sendMarkerMessages(Message inMessage){
+        if(!App.markerMessageSent.get(inMessage.getSnapshotID())) {
+            Socket clientSocket;
+            Iterator<Integer> it = App.nodeMap.keySet().iterator();
+            //Change source node ID to my source node ID
+            inMessage.setSrcNodeID(App.self.getNodeId());
+            while (it.hasNext()) {
+                try {
+                    Node neighbor = App.nodeMap.get(it.next());
+                    clientSocket = new Socket(neighbor.getNodeAddr(), neighbor.getPort());
+                    ObjectOutputStream outMessage = new ObjectOutputStream(clientSocket.getOutputStream());
+                    outMessage.writeObject(inMessage);
+                    clientSocket.close();
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
         }
     }
 }

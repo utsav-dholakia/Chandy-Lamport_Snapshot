@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import dev.Node;
@@ -29,7 +30,7 @@ public class App {
     public static Integer minPerActive = 0;
     public static Integer maxPerActive = 0;
     public static Integer minSendDelay = 0;
-    public static Integer maxSendDelay = 0;
+    public static Integer snapshotDelay = 0;
     public static Integer maxNumberMsgs = 0;
     //Store marker message is sent or not for a relevant snapshot ID
     public static TreeMap<Integer, Boolean> markerMessageSent = new TreeMap<Integer, Boolean>();
@@ -87,9 +88,9 @@ public class App {
                     	minPerActive= Integer.parseInt(info[1]);
                     	maxPerActive= Integer.parseInt(info[2]);
                     	minSendDelay= Integer.parseInt(info[3]);
-                    	maxSendDelay= Integer.parseInt(info[4]);
+                    	snapshotDelay= Integer.parseInt(info[4]);
                     	maxNumberMsgs= Integer.parseInt(info[5]);
-                    	System.out.println("Read 1st line : " + totalNodes + " "+ minPerActive +" "+ maxPerActive +" "+ minSendDelay +" "+ maxSendDelay +" "+ maxNumberMsgs);
+                    	System.out.println("Read 1st line : " + totalNodes + " "+ minPerActive +" "+ maxPerActive +" "+ minSendDelay +" "+ snapshotDelay +" "+ maxNumberMsgs);
                         //ignore first line
                         lineCount++;
                         linesToRead = totalNodes;      //Remembering the number of lines to read,say, N
@@ -156,7 +157,16 @@ public class App {
 
             //If the node is co-ordinator node (node 0), then start sending marker messages to neighbors
             if(self.getNodeId() == 0){
-
+                final AtomicInteger snapshotID = new AtomicInteger(0);
+                Timer timer = new Timer();
+                TimerTask tasknew = new TimerTask() {
+                    @Override
+                    public void run() {
+                        Message outMessage = new Message(MessageType.Marker, 0, null, snapshotID.getAndIncrement(), false);
+                        Processor.sendMarkerMessages(outMessage);
+                    }
+                };
+                timer.schedule(tasknew, snapshotDelay);
             }
 
             //Wait for server class be finished before finishing main thread

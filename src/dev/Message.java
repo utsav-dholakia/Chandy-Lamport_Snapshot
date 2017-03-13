@@ -17,8 +17,11 @@ enum MessageType {
 public class Message {
     MessageType messageType;
     Integer srcNodeID;
+    //Only for App messages
     Vector<Integer> timeStamp;
+    //Only for Marker messages
     Integer snapshotID;
+    //Only for special Map protocol termination message from co-ordinator
     boolean mapTermination;
 
     public Message(MessageType messageType, Integer srcNodeID, Vector<Integer> timeStamp, Integer snapshotID,
