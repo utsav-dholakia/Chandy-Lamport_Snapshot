@@ -26,6 +26,9 @@ public class Processor extends Thread{
                     Integer maxValue = Math.max(clockValueInMessage, clockValueLocal);
                     //Set local clock value = Max of both above + 1
                     App.vectorClock.set(inMessage.getSrcNodeID(), maxValue + 1);
+                    //If received an app message and total messages sent is less than max number of messages allowed then set process active
+                    if(App.sentMsgCount < App.maxNumberMsgs)
+                        App.isProcessActive = true;
                     break;
 
                 case Marker:
