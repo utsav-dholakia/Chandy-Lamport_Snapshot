@@ -1,5 +1,6 @@
 package dev;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -11,8 +12,9 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Listener extends Thread{
     Integer currPortNum;
-    volatile boolean serverOn = true;
+    public static volatile boolean serverOn = true;
     public static BlockingQueue<Message> messagesToBeProcessed = new LinkedBlockingQueue<Message>();
+    public static ServerSocket serverSocket;
 
     Listener(Integer portNum){
         this.currPortNum = portNum;
@@ -20,14 +22,13 @@ public class Listener extends Thread{
 
     @Override
     public void run() {
-        ServerSocket serverSocket;
         try{
             //Initialize the receiver as a continuous listening server
-            serverSocket = new ServerSocket();
+            serverSocket = new ServerSocket(currPortNum);
             System.out.println("Listening on port : " + currPortNum);
             while (serverOn) {
                 Socket sock = serverSocket.accept();
-                System.out.println("Connected");
+                //System.out.print("Connected, ");
                 //Enter a message that is received into the queue to be processed
                 messagesToBeProcessed.put((Message) new ObjectInputStream(sock.getInputStream()).readObject());
                 //Initiate thread of a class to process the messages one by one from queue
@@ -38,12 +39,17 @@ public class Listener extends Thread{
                 }
             }
         } catch(Exception e){
-            System.out.println("Could not create server on port number : " + currPortNum );
-            e.printStackTrace();
+            serverOn = false;
+            //
         }
     }
 
     public void stopListener(){
         serverOn = false;
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+
+        }
     }
 }

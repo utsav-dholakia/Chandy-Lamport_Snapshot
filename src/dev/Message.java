@@ -1,5 +1,6 @@
 package dev;
 
+import java.io.Serializable;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -11,10 +12,11 @@ enum MessageType {
     App,
     Marker,
     MapTermination,
-    NodePassive;
+    NodePassive,
+    NodeAcive;
 }
 
-public class Message {
+public class Message implements Serializable{
     MessageType messageType;
     Integer srcNodeID;
     //Only for App messages

@@ -28,7 +28,7 @@ public class App {
     //Store which node has sent "it is passive now" message to node 0
     public static volatile Set<Integer> nodesPassive = new HashSet<Integer>();
     //Local vector clock of the node
-    public static volatile Vector<Integer> vectorClock = new Vector<Integer>();
+    public static volatile Vector<Integer> vectorClock;
     //Store channelStates for different snapshots : for snapshot no. 0, store clock value of each node in the map(<Node ID, Vector Clock value>)
     public static volatile List<TreeMap<Integer, Integer>> channelStates = new ArrayList<TreeMap<Integer, Integer>>();
     public static volatile boolean isProcessActive = false;		//tells the current process state - active/passive
@@ -49,7 +49,7 @@ public class App {
             System.out.println("Error fetching host name!");
         }
         try {
-            FileReader fileReader = new FileReader("configuration.txt");
+            FileReader fileReader = new FileReader("configuration_chandy.txt");
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             int lineCount = 0, linesToRead = 0;
             int counter=0;
@@ -112,7 +112,6 @@ public class App {
                         } else if (lineCount > linesToRead) {  //Compute my neighbors
                             String[] neighbors = line.split("\\s+");
                             System.out.println("<><><><><><><><>"+line);
-                        	//tempTopology.put(Integer.parseInt(neighbors[0]), line);
 
                             //Assuming node 0 to be initially active, setting state to active.
                             if(self.getNodeId() == 0){
@@ -122,10 +121,18 @@ public class App {
                             if (self.getNodeId() == counter) {    //if 1st identifier is me ,then get my neighbors and add to nodeMap
                             	for (int i = 0; i < neighbors.length; i++) {
                                     nodeMap.put(Integer.parseInt(neighbors[i]), tempMap.get(Integer.parseInt(neighbors[i])));
-                                   //discoveredTopology.put(Integer.parseInt(neighbors[i]), new TopologyPayload(1, false));    //already discovered nodes are my neighbors @ 1 hop dist
-                                    System.out.println(">>>>"+neighbors[i]+">>>"+tempMap.get(Integer.parseInt(neighbors[i])));
+                                    System.out.println(">>>>"+neighbors[i]+">>>"+tempMap.get(Integer.parseInt(neighbors[i])).getNodeId());
                                 }
                             }
+                            /*else {
+                                for (int i = 0; i < neighbors.length; i++) {
+                                    if(self.getNodeId() == Integer.parseInt(neighbors[i])) {
+                                        nodeMap.put(counter, tempMap.get(counter));
+                                        System.out.println(">>>>" + neighbors[i] + ">>>" + tempMap.get(Integer.parseInt(neighbors[i])).getNodeId());
+                                        break;
+                                    }
+                                }
+                            }*/
                             counter++;		//placeholder for source node 0 123 and 1 04 and so on, since the source is missing from the lines.
                             lineCount++;
                         }
@@ -138,8 +145,10 @@ public class App {
                 }
             }
 
+            //Initialize vector clock with value 0 for each node, size = number of nodes
+            vectorClock = new Vector<Integer>(Collections.nCopies(totalNodes, 0));
 
-            //Listener(Server) class initiated
+           //Listener(Server) class initiated
             Listener listener = new Listener(self.getPort());
             Thread listenerThread = new Thread(listener, "Listener Thread");
             listenerThread.start();
@@ -149,45 +158,75 @@ public class App {
             MapProtocol protocol = new MapProtocol();
             Thread protocolThread = new Thread(protocol, "Map Protocol Thread");
             protocolThread.start();
-
+            Timer timer = new Timer();
             //If the node is co-ordinator node (node 0), then start sending snapshot initiating marker messages to neighbors
             if(self.getNodeId() == 0){
-                //Stop initiating snapshots after you sent map protocol termination messages to everyone
-                while(!App.stopMapProtocolsMessageSent){
-                    Message outMessage = new Message(MessageType.Marker, 0, null, snapshotNumber);
-                    Processor.sendMarkerMessages(outMessage);
-                    snapshotNumber++;
-                    Thread.sleep(snapshotDelay);
+                TimerTask tasknew = new TimerTask() {
+                    @Override
+                    public void run() {
+                        //Stop initiating snapshots after you sent map protocol termination messages to everyone
+                        while(!App.stopMapProtocolsMessageSent){
+                            if(App.markerMessageSent != null && !App.markerMessageSent.containsKey(snapshotNumber)) {
+                                //Record local state (local vector clock value)
+                                TreeMap<Integer, Integer> channelState = new TreeMap<Integer, Integer>();
+                                for(int node = 0; node < App.totalNodes; node++) {
+                                    channelState.put(node, App.vectorClock.get(node));
+                                }
+                                App.channelStates.add(snapshotNumber, channelState);
+                                System.out.println("Sending marker message with snapshot ID : " + snapshotNumber);
+                                Message outMessage = new Message(MessageType.Marker, 0, null, snapshotNumber);
+                                //Mark that marker message has been sent for this snapshot ID
+                                App.markerMessageSent.put(snapshotNumber, true);
+                                Processor.sendMarkerMessages(outMessage);
+                                snapshotNumber++;
+                            }
+                        }
+                    }
+                };
+                if(!App.stopMapProtocolsMessageSent) {
+                    tasknew.run();
+                    timer.schedule(tasknew, snapshotDelay);
                 }
             }
             //Wait for map protocol termination to be marked
             while(true){
+                if(App.stopMapProtocolsMessageSent) {
+                    timer.cancel();
+                    timer.purge();
+                }
+                Boolean neighbourMarkerNotArrivedYet = false;
                 //When it is marked, wait for marker messages with maxSnapshotID to arrive from all neighbors, then terminate server
-                if(mapProtocolTerminationFlag){
-                    Set<Integer> neighborsWithMarkerMessage = channelStates.get(maxSnapshotID).keySet();
-                    while(true){
-                        Iterator<Integer> neighborNodes = nodeMap.keySet().iterator();
-                        boolean neighbourMarkerNotArrivedYet = false;
-                        while(neighborNodes.hasNext()){
-                            if(!neighborsWithMarkerMessage.contains(neighborNodes.next())) {
-                                neighbourMarkerNotArrivedYet = true;
+                if(App.mapProtocolTerminationFlag && App.channelStates != null){
+                    if(channelStates.contains(maxSnapshotID)) {
+                        while (true) {
+                            //System.out.println("starting while loop...3");
+                            Set<Integer> neighborsWithMarkerMessage = channelStates.get(maxSnapshotID).keySet();
+                            Iterator<Integer> neighborNodes = nodeMap.keySet().iterator();
+                            neighbourMarkerNotArrivedYet = false;
+                            while (neighborNodes.hasNext()) {
+                                int node = neighborNodes.next();
+                                if (!neighborsWithMarkerMessage.contains(node)) {
+                                    neighbourMarkerNotArrivedYet = true;
+                                    break;
+                                }
+                            }
+                            if (!neighbourMarkerNotArrivedYet) {
                                 break;
                             }
                         }
-                        if(!neighbourMarkerNotArrivedYet){
-                            break;
-                        }
                     }
-                    //When message from all neighbour arrived with maxSnapshotID, stop Listener
                     listener.stopListener();
                     break;
                 }
+                //Thread.sleep(1000);
             }
-
-            printOutput();
+            //printOutput();
 
         } catch (Exception e) {
-            e.printStackTrace();
+
+        }
+        finally {
+            printOutput();
         }
     }
 
@@ -195,18 +234,17 @@ public class App {
         try {
             FileWriter fileWriter = new FileWriter("configuration-" + self.getNodeId() + ".out");
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-            int index = 0;
-            while(index < App.maxSnapshotID){
-                int node = 0;
-                while(node < App.totalNodes) {
+            for(int index = 0; index < App.channelStates.size() ; index++){
+                for(int node = 0; node < App.totalNodes; node++) {
                     int value = App.channelStates.get(index).get(node);
                     fileWriter.write(value + "  ");
                 }
                 fileWriter.write("\n");
             }
-
+            bufferedWriter.close();
+            fileWriter.close();
         } catch(IOException e){
-            e.printStackTrace();
+
         }
     }
 }

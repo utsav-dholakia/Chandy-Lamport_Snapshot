@@ -1,0 +1,23 @@
+#Total nodes	minPerActive	maxPerActive	minSendDelay	snapShotDelay	max#Messages
+10 10 15 300 3000 50
+# nodeID hostName listenPort
+0	dc01.utdallas.edu	5001
+1	cometnet-10-21-33-40.utdallas.edu	5002
+2	dc03.utdallas.edu	5003
+3	dc04.utdallas.edu	5004
+4	dc05.utdallas.edu	5005
+5	dc06.utdallas.edu	5006
+6	dc07.utdallas.edu	5007
+7	dc08.utdallas.edu	5008
+8	dc09.utdallas.edu	5009
+9	dc10.utdallas.edu	5010
+1   2	6   7
+0   5   7
+0	4	5   6   8
+5
+2	5
+1	2   9	3	4
+0   2
+0   1
+2   9
+8   4   5
